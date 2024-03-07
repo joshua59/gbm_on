@@ -294,7 +294,9 @@ class stock_opname_model extends CI_Model {
                                 $aksi .= anchor(null, '<i class="icon-share" title="Kirim Closing"></i>', array('class' => 'btn transparant', 'id' => 'button-kirim_closing-' . $id, 'onclick' => 'kirim_row(this.id)', 'data-source' => base_url($module . '/sendActionClosing/' . $id)));
                                 $aksi .= anchor(null, '<i class="icon-edit" title="Edit Closing"></i>', array('class' => 'btn transparant', 'id' => 'button-edit-' . $id, 'onclick' => 'load_form(this.id)', 'data-source' => base_url($module . '/edit/' . $id)));
                             } else {
-                                $aksi .= anchor(null, '<i class="icon-file-alt" title="View"></i>', array('class' => 'btn transparant', 'id' => 'button-view-' . $id, 'onclick' => 'load_form(this.id)', 'data-source' => base_url($module . '/loadView/' . $id))); 
+                                // $aksi .= anchor(null, '<i class="icon-file-alt" title="View"></i>', array('class' => 'btn transparant', 'id' => 'button-view-' . $id, 'onclick' => 'load_form(this.id)', 'data-source' => base_url($module . '/loadView/' . $id))); 
+                                $aksi .= anchor(null, '<i class="icon-share" title="Kirim"></i>', array('class' => 'btn transparant', 'id' => 'button-kirim-' . $id, 'onclick' => 'kirim_row(this.id)', 'data-source' => base_url($module . '/sendAction/' . $id)));
+                                $aksi .= anchor(null, '<i class="icon-edit" title="Edit"></i>', array('class' => 'btn transparant', 'id' => 'button-edit-' . $id, 'onclick' => 'load_form(this.id)', 'data-source' => base_url($module . '/edit/' . $id)));
                             }
                         } else {
                             $aksi .= anchor(null, '<i class="icon-file-alt" title="View"></i>', array('class' => 'btn transparant', 'id' => 'button-view-' . $id, 'onclick' => 'load_form(this.id)', 'data-source' => base_url($module . '/loadView/' . $id))); 

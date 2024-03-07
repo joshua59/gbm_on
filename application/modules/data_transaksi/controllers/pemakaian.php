@@ -539,6 +539,51 @@ class pemakaian extends MX_Controller{
                     $s = "1";
                 } else if ($statusKirim == 'approve') {
                     $s = "2";
+                    $query_pemakaian = 'SELECT * FROM MUTASI_PEMAKAIAN WHERE ID_PEMAKAIAN = '.$idPenerimaan[$i];
+                    $result = $this->db->query($query_pemakaian)->result();
+                    if (!empty($result)) {
+                        foreach ($result as $row) {
+                            // Cek apakah data dengan ID yang sama sudah ada di MUTASI_PEMAKAIAN_APPROVE
+                            $query_existing = 'SELECT COUNT(*) AS jumlah FROM MUTASI_PEMAKAIAN_APPROVE WHERE ID_PEMAKAIAN = '.$row->ID_PEMAKAIAN;
+                            $existing_data = $this->db->query($query_existing)->row();
+                            if ($existing_data->jumlah > 0) {
+                                // Jika sudah ada, lakukan update
+                                $update_pemakaian = 'UPDATE MUTASI_PEMAKAIAN_APPROVE 
+                                                        SET 
+                                                            ID_JNS_BHN_BKR = "'.$row->ID_JNS_BHN_BKR.'", 
+                                                            SLOC = "'.$row->SLOC.'", 
+                                                            TGL_PENCATATAN = "'.$row->TGL_PENCATATAN.'", 
+                                                            TGL_MUTASI_PENGAKUAN = "'.$row->TGL_MUTASI_PENGAKUAN.'", 
+                                                            VOLUME_PEMAKAIAN = '.$row->VOLUME_PEMAKAIAN.', 
+                                                            CD_BY_MUTASI_PEMAKAIAN = "'.$row->CD_BY_MUTASI_PEMAKAIAN.'", 
+                                                            UD_BY_MUTASI_PEMAKAIAN = "'.$row->UD_BY_MUTASI_PEMAKAIAN.'", 
+                                                            UD_DATE_MUTASI_PEMAKAIAN = "'.$row->UD_DATE_MUTASI_PEMAKAIAN.'", 
+                                                            APPROVE_BY_MUTASI_PEMAKAIAN = "'.$row->APPROVE_BY_MUTASI_PEMAKAIAN.'", 
+                                                            APPROVE_DATE_MUTASI_PAKAI = "'.$row->APPROVE_DATE_MUTASI_PAKAI.'", 
+                                                            STATUS_MUTASI_PEMAKAIAN = 2, 
+                                                            NO_MUTASI_PEMAKAIAN = "'.$row->NO_MUTASI_PEMAKAIAN.'", 
+                                                            NO_TUG = "'.$row->NO_TUG.'", 
+                                                            JENIS_PEMAKAIAN = "'.$row->JENIS_PEMAKAIAN.'", 
+                                                            KET_MUTASI_PEMAKAIAN = "'.$row->KET_MUTASI_PEMAKAIAN.'", 
+                                                            CD_MUTASI_PEMAKAIAN = "'.$row->CD_MUTASI_PEMAKAIAN.'", 
+                                                            TGL_KIRIM = "'.$row->TGL_KIRIM.'", 
+                                                            TGL_BATAL = "'.$row->TGL_BATAL.'", 
+                                                            BATAL_BY = "'.$row->BATAL_BY.'", 
+                                                            KET_BATAL = "'.$row->KET_BATAL.'", 
+                                                            SLOC_TERIMA = "'.$row->SLOC_TERIMA.'", 
+                                                            IS_TOLAK = '.$row->IS_TOLAK.' 
+                                                        WHERE ID_PEMAKAIAN = '.$row->ID_PEMAKAIAN;
+                                $this->db->query($update_pemakaian);
+                            } else {
+                                // Jika belum ada, lakukan insert dengan mengubah STATUS_MUTASI_PEMAKAIAN menjadi 2
+                                $insert_pemakaian = 'INSERT INTO MUTASI_PEMAKAIAN_APPROVE (ID_PEMAKAIAN, ID_JNS_BHN_BKR, SLOC, TGL_PENCATATAN, TGL_MUTASI_PENGAKUAN, VOLUME_PEMAKAIAN, CD_BY_MUTASI_PEMAKAIAN, UD_BY_MUTASI_PEMAKAIAN, UD_DATE_MUTASI_PEMAKAIAN, APPROVE_BY_MUTASI_PEMAKAIAN, APPROVE_DATE_MUTASI_PAKAI, STATUS_MUTASI_PEMAKAIAN, NO_MUTASI_PEMAKAIAN, NO_TUG, JENIS_PEMAKAIAN, KET_MUTASI_PEMAKAIAN, CD_MUTASI_PEMAKAIAN, TGL_KIRIM, TGL_BATAL, BATAL_BY, KET_BATAL, SLOC_TERIMA, IS_TOLAK) VALUES ('.$row->ID_PEMAKAIAN.', "'.$row->ID_JNS_BHN_BKR.'", "'.$row->SLOC.'", "'.$row->TGL_PENCATATAN.'", "'.$row->TGL_MUTASI_PENGAKUAN.'", '.$row->VOLUME_PEMAKAIAN.', "'.$row->CD_BY_MUTASI_PEMAKAIAN.'", "'.$row->UD_BY_MUTASI_PEMAKAIAN.'", "'.$row->UD_DATE_MUTASI_PEMAKAIAN.'", "'.$row->APPROVE_BY_MUTASI_PEMAKAIAN.'", "'.$row->APPROVE_DATE_MUTASI_PAKAI.'", 2, "'.$row->NO_MUTASI_PEMAKAIAN.'", "'.$row->NO_TUG.'", "'.$row->JENIS_PEMAKAIAN.'", "'.$row->KET_MUTASI_PEMAKAIAN.'", "'.$row->CD_MUTASI_PEMAKAIAN.'", "'.$row->TGL_KIRIM.'", "'.$row->TGL_BATAL.'", "'.$row->BATAL_BY.'", "'.$row->KET_BATAL.'", "'.$row->SLOC_TERIMA.'", '.$row->IS_TOLAK.')';
+                                $this->db->query($insert_pemakaian);
+                            }
+                        }
+                    } else {
+                        $gagal++;
+                        $gagal_pesan .= 'Data dengan ID '.$idPenerimaan[$i].' tidak ditemukan di tabel MUTASI_PEMAKAIAN<br>';
+                    }
                 } else {
                     $s = "3";
                 }

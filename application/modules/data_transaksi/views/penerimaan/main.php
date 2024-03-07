@@ -629,7 +629,7 @@
 
                         if ((vLevelUser==3) || (vLevelUser==4)){
                             if ((data_detail[i].KODE_STATUS !== "0") && (data_detail[i].KODE_STATUS !== "4")){
-                                cekbox = '';
+                                vSetEdit = vEdit;
                             } 
                             if ((data_detail[i].KODE_STATUS == "0") || (data_detail[i].KODE_STATUS == "4")){
                                 if(data_detail[i].CREATED_BY==vUserName){

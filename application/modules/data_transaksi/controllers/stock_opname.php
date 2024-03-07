@@ -34,6 +34,8 @@ class stock_opname extends MX_Controller {
         /* Load Global Model */
         $this->load->model('stock_opname_model', 'tbl_get');
         $this->load->model('laporan/persediaan_bbm_model','tbl_get_combo');
+        $this->load->model('pemakaian_model','tbl_get_pemakaian');
+        // $this->laod->model('penerimaan_model','tbl_get_penerimaan');
     }
 
     public function index() {
@@ -297,6 +299,7 @@ class stock_opname extends MX_Controller {
         if($id==''){
             $message = array(false, 'Proses gagal', 'Proses kirim data gagal.', '');
         }else{
+            date_default_timezone_set('Asia/Jakarta');
             $data['id'] = $id;
             $data = $this->tbl_get->dataToUpdate($id);
             $hasil=$data->get()->row();
@@ -308,10 +311,43 @@ class stock_opname extends MX_Controller {
             $USER = $this->session->userdata('user_name');
             $STATUS="1";
             $ket='';
+            $JUMLAH=1;
 
             $simpan_data =$this->tbl_get->callProsedureStockOpname($ID_STOCKOPNAME, $SLOC, $ID_JNS_BHN_BKR, $TGL_PENGAKUAN, $LEVEL_USER, $STATUS, $USER, $ket);
+            
             if ($simpan_data[0]->RCDB=='RC00') {
-                $message = array(true, 'Proses Berhasil', 'Proses kirim data berhasil.', '#content_table');
+                if ($LEVEL_USER == 2 || $LEVEL_USER == 1){
+                    $tanggal_cek = date('Y-m-d', strtotime('+1 day', strtotime($TGL_PENGAKUAN)));
+                    // $data_exist = 1;
+
+                    // while($data_exist == 1) {
+                        // Query untuk menghitung jumlah data di tabel REKAP_MUTASI_PERSEDIAAN berdasarkan tanggal
+                        $query = "SELECT COUNT(*) AS count FROM REKAP_MUTASI_PERSEDIAAN WHERE TGL_MUTASI_PERSEDIAAN = '$tanggal_cek'";
+                        $result = $this->db->query($query)->row();
+                        
+                        // Jika jumlah data = 0, maka set $data_exist = false untuk menghentikan looping
+                        if($result->count == 0) {
+                            $data_exist = 0;
+                        } else {
+                            // Query untuk mendapatkan data terakhir dari tabel MUTASI_PEMAKAIAN_APPROVE
+                            $querymutasipemakaian = "SELECT * FROM MUTASI_PEMAKAIAN_APPROVE WHERE TGL_MUTASI_PENGAKUAN = '$tanggal_cek' AND SLOC = '$SLOC' AND ID_JNS_BHN_BKR = '$ID_JNS_BHN_BKR' AND STATUS_MUTASI_PEMAKAIAN = 2 ORDER BY ID_PEMAKAIAN DESC LIMIT 1";
+                            $result_mutasi_pemakaian = $this->db->query($querymutasipemakaian)->row();
+
+                            // $simpan_pemakaian = $this->tbl_get_pemakaian->saveDetailPenerimaan(querymutasipemakaian.ID_PEMAKAIAN, querymutasipemakaian.STATUS_MUTASI_PEMAKAIAN, $LEVEL_USER, $USER, $ket);
+                            $simpan_pemakaian = $this->tbl_get_pemakaian->saveDetailPenerimaan($result_mutasi_pemakaian->ID_PEMAKAIAN, $result_mutasi_pemakaian->STATUS_MUTASI_PEMAKAIAN, $LEVEL_USER, $USER, $JUMLAH, $ket);
+
+                            // Jika masih ada data, tambahkan 1 hari ke tanggal cek untuk looping berikutnya
+                            $tanggal_cek = date('Y-m-d', strtotime('+1 day', strtotime($TGL_PENGAKUAN)));
+                        }
+                    // }
+                    if ($simpan_pemakaian[0]->RCDB == "RC00") {
+                    $message = array(true, 'Proses Nerhasil', $simpan_pemakaian[0]->PESANDB, '');
+                    } else {
+                        $message = array(false, 'Proses Nagal', $simpan_pemakaian[0]->PESANDB, '');
+                    }
+                } else {
+                    $message = array(true, 'Proses Berhasil', 'Proses kirim data berhasil.', '#content_table');
+                }
             }else{
                 $message = array(false, 'Proses gagal', $simpan_data[0]->PESANDB, '');
             }
@@ -350,6 +386,7 @@ class stock_opname extends MX_Controller {
         if($id==''){
             $message = array(false, 'Proses gagal', 'Proses Appove data gagal.', '');
         }else{
+            date_default_timezone_set('Asia/Jakarta');
             $data['id'] = $id;
             $data = $this->tbl_get->dataToUpdate($id);
             $hasil=$data->get()->row();
@@ -361,13 +398,52 @@ class stock_opname extends MX_Controller {
             $USER = $this->session->userdata('user_name');
             $STATUS="2";
             $ket='';
+            $JUMLAH=1;
 
             $simpan_data =$this->tbl_get->callProsedureStockOpname($ID_STOCKOPNAME, $SLOC, $ID_JNS_BHN_BKR, $TGL_PENGAKUAN, $LEVEL_USER, $STATUS, $USER, $ket);
-            if ($simpan_data[0]->RCDB=='RC00') {
-                $message = array(true, 'Proses Berhasil', $simpan_data[0]->PESANDB, '#content_table');
-            }else{
-                $message = array(false, 'Proses gagal', $simpan_data[0]->PESANDB, '');
+
+            if ($simpan_data[0]->RCDB == 'RC00') {
+                $tanggal_cek = date('Y-m-d', strtotime('+1 day', strtotime($TGL_PENGAKUAN)));
+                $data_exist = true;
+            
+                while ($data_exist) {
+                    // Query untuk menghitung jumlah data di tabel REKAP_MUTASI_PERSEDIAAN berdasarkan tanggal
+                    $query = "SELECT COUNT(*) AS count FROM REKAP_MUTASI_PERSEDIAAN WHERE TGL_MUTASI_PERSEDIAAN = ?";
+                    $result = $this->db->query($query, array($tanggal_cek))->row();
+            
+                    // Jika jumlah data tidak sama dengan 0, maka lanjutkan perulangan
+                    if ($result->count != 0) {
+                        // Query untuk mendapatkan data terakhir dari tabel MUTASI_PEMAKAIAN_APPROVE
+                        $querymutasipemakaian = "SELECT * FROM MUTASI_PEMAKAIAN_APPROVE WHERE TGL_MUTASI_PENGAKUAN = ? AND SLOC = ? AND ID_JNS_BHN_BKR = ? AND STATUS_MUTASI_PEMAKAIAN = 2 ORDER BY ID_PEMAKAIAN DESC LIMIT 1";
+                        $result_mutasi_pemakaian = $this->db->query($querymutasipemakaian, array($tanggal_cek, $SLOC, $ID_JNS_BHN_BKR))->row();
+            
+                        // Lakukan operasi yang diperlukan dengan data yang diperoleh
+                        $simpan_pemakaian = $this->tbl_get_pemakaian->saveDetailPenerimaan($result_mutasi_pemakaian->ID_PEMAKAIAN, $result_mutasi_pemakaian->STATUS_MUTASI_PEMAKAIAN, $LEVEL_USER, $USER, $JUMLAH, $ket);
+            
+                        // Jika berhasil, lanjutkan ke langkah berikutnya
+                        if ($simpan_pemakaian[0]->RCDB == "RC00") {
+                            // Update tanggal cek untuk iterasi berikutnya
+                            $tanggal_cek = date('Y-m-d', strtotime('+1 day', strtotime($tanggal_cek)));
+                        } else {
+                            // Jika gagal, keluar dari perulangan
+                            $data_exist = false;
+                        }
+                    } else {
+                        // Jika jumlah data = 0, keluar dari perulangan
+                        $data_exist = false;
+                    }
+                }
+            
+                // Set pesan berdasarkan hasil operasi
+                if ($simpan_pemakaian[0]->RCDB == "RC00") {
+                    $message = array(true, 'Proses Berhasil', $simpan_pemakaian[0]->PESANDB, '');
+                } else {
+                    $message = array(false, 'Proses Gagal', $simpan_pemakaian[0]->PESANDB, '');
+                }
+            } else {
+                $message = array(false, 'Proses Gagal', $simpan_data[0]->PESANDB, '');
             }
+            
         }
         echo json_encode($message);
     }
@@ -490,11 +566,11 @@ class stock_opname extends MX_Controller {
 
         $id = $this->input->post('id');
 
-        if ($id == '') {
-            if (empty($_FILES['FILE_UPLOAD']['name'])){
-                $this->form_validation->set_rules('FILE_UPLOAD', 'Upload Dokumen', 'required');
-            }
-        }
+        // if ($id == '') {
+        //     if (empty($_FILES['FILE_UPLOAD']['name'])){
+        //         $this->form_validation->set_rules('FILE_UPLOAD', 'Upload Dokumen', 'required');
+        //     }
+        // }
 
         if ($this->form_validation->run($this)) {
             $message = array(false, 'Proses gagal', 'Proses penyimpanan data gagal.', '');
@@ -521,11 +597,11 @@ class stock_opname extends MX_Controller {
                 $config['permitted_uri_chars'] = 'a-z 0-9~%.:&_\-'; 
     
                 $this->load->library('upload', $config);
-                if (!$this->upload->do_upload('FILE_UPLOAD')){
-                    $err = $this->upload->display_errors('', '');
-                    $message = array(false, 'Proses gagal', $err, '');
-                } 
-                else {
+                // if (!$this->upload->do_upload('FILE_UPLOAD')){
+                //     $err = $this->upload->display_errors('', '');
+                //     $message = array(false, 'Proses gagal', $err, '');
+                // } 
+                // else {
                     $res = $this->upload->data();
                     if ($res){
                         $nama_file= $res['file_name'];
@@ -545,7 +621,7 @@ class stock_opname extends MX_Controller {
                     } else {
                         $message = array(false, 'Proses Simpan Gagal', $res, '');
                     }
-                }
+                // }
             } 
             else {
                 if (empty($_FILES['FILE_UPLOAD']['name'])){
@@ -582,11 +658,11 @@ class stock_opname extends MX_Controller {
                     $config['permitted_uri_chars'] = 'a-z 0-9~%.:&_\-'; 
                 
                     $this->load->library('upload', $config);
-                    if (!$this->upload->do_upload('FILE_UPLOAD')){
-                        $err = $this->upload->display_errors('', '');
-                        $message = array(false, 'Proses gagal', $err, '');
-                    }
-                    else{
+                    // if (!$this->upload->do_upload('FILE_UPLOAD')){
+                    //     $err = $this->upload->display_errors('', '');
+                    //     $message = array(false, 'Proses gagal', $err, '');
+                    // }
+                    // else{
                         $res = $this->upload->data();
                         if ($res){
                             $nama_file= $res['file_name'];
@@ -607,7 +683,7 @@ class stock_opname extends MX_Controller {
                         } else {
                             $message = array(false, 'Proses Simpan Gagal', $res, '');
                         }
-                    }
+                    // }
                 }
             }
         } else {

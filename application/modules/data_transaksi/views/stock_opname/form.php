@@ -72,7 +72,7 @@
 			
 		</div>
 		<div class="md-card-content">
-			<label for="password" class="control-label">Upload File (Maks 4 MB) <span class="required">*</span> : </label>
+			<label for="password" class="control-label">Upload File (Maks 4 MB) : </label>
 			<div class="controls">
                 <?php echo form_upload('FILE_UPLOAD', !empty($default->PATH_STOCKOPNAME) ? $default->PATH_STOCKOPNAME : '', 'class="span6"'); ?>
 			</div>

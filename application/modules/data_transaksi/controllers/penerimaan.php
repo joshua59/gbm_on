@@ -774,10 +774,12 @@ class penerimaan extends MX_Controller{
                 $level_user = $this->session->userdata('level_user');
                 $kode_level = $this->session->userdata('kode_level');
 
+                $data['STATUS'] = '0';
                 $data['ID_PENERIMAAN']=$id;
                 $data['LEVEL_USER']=$level_user;
                 $data['KODE_LEVEL']=$kode_level;
-                $data['STATUS'] = $this->input->post('STATUS_MUTASI_TERIMA');
+                // $data['STATUS'] = $this->input->post('STATUS_MUTASI_TERIMA');
+                $data['UD_BY_MUTASI_TERIMA'] = $this->session->userdata('user_name');
                 $simpan_data = $this->tbl_get->save_edit($data);
                 if ($simpan_data[0]->RCDB == 'RC00') {
                     $message = array(true, 'Proses Update Berhasil', $simpan_data[0]->PESANDB, '#content_table');
@@ -843,7 +845,7 @@ class penerimaan extends MX_Controller{
         $gagal=0;
         $gagal_pesan='';
         $ket = '';
-
+    
         for ($i = 0; $i < count($idPenerimaan); $i++) {
             if (isset($pilihan[$i])) {
                 $p = $pilihan[$i];
@@ -851,12 +853,133 @@ class penerimaan extends MX_Controller{
                     $s = "1";
                 } else if ($statusKirim == 'approve') {
                     $s = "2";
+                    $query_penerimaan = 'SELECT * FROM MUTASI_PENERIMAAN WHERE ID_PENERIMAAN = '.$idPenerimaan[$i];
+                    $result = $this->db->query($query_penerimaan)->result();
+                    if (!empty($result)) {
+                        foreach ($result as $row) {
+                            // Cek apakah data dengan ID yang sama sudah ada di MUTASI_PENERIMAAN_APPROVE
+                            $query_existing = 'SELECT COUNT(*) AS jumlah FROM MUTASI_PENERIMAAN_APPROVE WHERE ID_PENERIMAAN = '.$row->ID_PENERIMAAN;
+                            $existing_data = $this->db->query($query_existing)->row();
+                            if ($existing_data->jumlah > 0) {
+                                // Jika sudah ada, lakukan update
+                                $update_penerimaan = 'UPDATE MUTASI_PENERIMAAN_APPROVE 
+                                                        SET 
+                                                            ID_TRANSPORTIR = "'.$row->ID_TRANSPORTIR.'", 
+                                                            ID_PEMASOK = "'.$row->ID_PEMASOK.'", 
+                                                            ID_JNS_BHN_BKR = "'.$row->ID_JNS_BHN_BKR.'", 
+                                                            SLOC = "'.$row->SLOC.'", 
+                                                            NO_MUTASI_TERIMA = "'.$row->NO_MUTASI_TERIMA.'", 
+                                                            TGL_PENGAKUAN = "'.$row->TGL_PENGAKUAN.'", 
+                                                            TGL_MUTASI_TERIMA = "'.$row->TGL_MUTASI_TERIMA.'", 
+                                                            TGL_PENERIMAAN = "'.$row->TGL_PENERIMAAN.'", 
+                                                            JNS_PENERIMAAN = "'.$row->JNS_PENERIMAAN.'", 
+                                                            VOL_TERIMA = '.$row->VOL_TERIMA.', 
+                                                            VOL_TERIMA_REAL = '.$row->VOL_TERIMA_REAL.', 
+                                                            KET_MUTASI_TERIMA = "'.$row->KET_MUTASI_TERIMA.'", 
+                                                            CD_BY_MUTASI_TERIMA = "'.$row->CD_BY_MUTASI_TERIMA.'", 
+                                                            CD_DATE_MUTASI_TERIMA = "'.$row->CD_DATE_MUTASI_TERIMA.'", 
+                                                            TGL_KIRIM = "'.$row->TGL_KIRIM.'", 
+                                                            UD_BY_MUTASI_TERIMA = "'.$row->UD_BY_MUTASI_TERIMA.'", 
+                                                            UD_DATE_MUTASI_TERIMA = "'.$row->UD_DATE_MUTASI_TERIMA.'", 
+                                                            APPROVEL_BY_MUTASI_TERIMA = "'.$row->APPROVEL_BY_MUTASI_TERIMA.'", 
+                                                            APPROVEL_DATE_MUTASI_TERIMA = "'.$row->APPROVEL_DATE_MUTASI_TERIMA.'", 
+                                                            STATUS_MUTASI_TERIMA = 2, 
+                                                            REVISI = "'.$row->REVISI.'", 
+                                                            IS_MIX_BBM = "'.$row->IS_MIX_BBM.'", 
+                                                            ID_KOMPONEN_BBM = "'.$row->ID_KOMPONEN_BBM.'", 
+                                                            TGL_BATAL = "'.$row->TGL_BATAL.'", 
+                                                            BATAL_BY = "'.$row->BATAL_BY.'", 
+                                                            KET_BATAL = "'.$row->KET_BATAL.'", 
+                                                            PATH_FILE = "'.$row->PATH_FILE.'", 
+                                                            IDGROUP = "'.$row->IDGROUP.'", 
+                                                            JNS_BIO = "'.$row->JNS_BIO.'", 
+                                                            SLOC_KIRIM = "'.$row->SLOC_KIRIM.'", 
+                                                            IS_TOLAK = "'.$row->IS_TOLAK.'" 
+                                                        WHERE ID_PENERIMAAN = '.$row->ID_PENERIMAAN;
+                                $this->db->query($update_penerimaan);
+                            } else {
+                                // Jika belum ada, lakukan insert dengan mengubah STATUS_MUTASI_TERIMA menjadi 2
+                                $insert_penerimaan = 'INSERT INTO MUTASI_PENERIMAAN_APPROVE (
+                                                        ID_PENERIMAAN, 
+                                                        ID_TRANSPORTIR, 
+                                                        ID_PEMASOK, 
+                                                        ID_JNS_BHN_BKR, 
+                                                        SLOC, 
+                                                        NO_MUTASI_TERIMA, 
+                                                        TGL_PENGAKUAN, 
+                                                        TGL_MUTASI_TERIMA, 
+                                                        TGL_PENERIMAAN, 
+                                                        JNS_PENERIMAAN, 
+                                                        VOL_TERIMA, 
+                                                        VOL_TERIMA_REAL, 
+                                                        KET_MUTASI_TERIMA, 
+                                                        CD_BY_MUTASI_TERIMA, 
+                                                        CD_DATE_MUTASI_TERIMA, 
+                                                        TGL_KIRIM, 
+                                                        UD_BY_MUTASI_TERIMA, 
+                                                        UD_DATE_MUTASI_TERIMA, 
+                                                        STATUS_MUTASI_TERIMA, 
+                                                        APPROVEL_BY_MUTASI_TERIMA, 
+                                                        APPROVEL_DATE_MUTASI_TERIMA, 
+                                                        REVISI, 
+                                                        IS_MIX_BBM, 
+                                                        ID_KOMPONEN_BBM, 
+                                                        TGL_BATAL, 
+                                                        BATAL_BY, 
+                                                        KET_BATAL, 
+                                                        PATH_FILE, 
+                                                        IDGROUP, 
+                                                        JNS_BIO, 
+                                                        SLOC_KIRIM, 
+                                                        IS_TOLAK
+                                                    ) 
+                                                    VALUES (
+                                                        "'.$row->ID_PENERIMAAN.'", 
+                                                        "'.$row->ID_TRANSPORTIR.'", 
+                                                        "'.$row->ID_PEMASOK.'", 
+                                                        "'.$row->ID_JNS_BHN_BKR.'", 
+                                                        "'.$row->SLOC.'", 
+                                                        "'.$row->NO_MUTASI_TERIMA.'", 
+                                                        "'.$row->TGL_PENGAKUAN.'", 
+                                                        "'.$row->TGL_MUTASI_TERIMA.'", 
+                                                        "'.$row->TGL_PENERIMAAN.'", 
+                                                        "'.$row->JNS_PENERIMAAN.'", 
+                                                        '.$row->VOL_TERIMA.', 
+                                                        '.$row->VOL_TERIMA_REAL.', 
+                                                        "'.$row->KET_MUTASI_TERIMA.'", 
+                                                        "'.$row->CD_BY_MUTASI_TERIMA.'", 
+                                                        "'.$row->CD_DATE_MUTASI_TERIMA.'", 
+                                                        "'.$row->TGL_KIRIM.'", 
+                                                        "'.$row->UD_BY_MUTASI_TERIMA.'", 
+                                                        "'.$row->UD_DATE_MUTASI_TERIMA.'", 
+                                                        2, 
+                                                        "'.$row->APPROVEL_BY_MUTASI_TERIMA.'", 
+                                                        "'.$row->APPROVEL_DATE_MUTASI_TERIMA.'", 
+                                                        '.$row->REVISI.', 
+                                                        "'.$row->IS_MIX_BBM.'", 
+                                                        "'.$row->ID_KOMPONEN_BBM.'", 
+                                                        "'.$row->TGL_BATAL.'", 
+                                                        "'.$row->BATAL_BY.'", 
+                                                        "'.$row->KET_BATAL.'", 
+                                                        "'.$row->PATH_FILE.'", 
+                                                        "'.$row->IDGROUP.'", 
+                                                        "'.$row->JNS_BIO.'", 
+                                                        "'.$row->SLOC_KIRIM.'", 
+                                                        '.$row->IS_TOLAK.'
+                                                    )';
+                                $this->db->query($insert_penerimaan);
+                            }
+                        }
+                    } else {
+                        $gagal++;
+                        $gagal_pesan .= 'Data dengan ID '.$idPenerimaan[$i].' tidak ditemukan di tabel MUTASI_PENERIMAAN<br>';
+                    }
                 } else {
                     $s = "3";
                 }
                 
                 $simpan = $this->tbl_get->saveDetailPenerimaan($p, $s, $level_user, $kode_level, $user_name, $jumlah, $ket);
-
+                
                 if ($simpan[0]->RCDB == "RC00") {
                     $berhasil++;
                 } else {
@@ -866,7 +989,7 @@ class penerimaan extends MX_Controller{
 
             }
         }
-
+    
         if (($berhasil>0) && ($gagal>0)){
             $rest = 'Total Proses : '.($berhasil+$gagal).'  
                     <br>
@@ -878,12 +1001,12 @@ class penerimaan extends MX_Controller{
                     - Pesan Gagal :
                     <br> 
                     '.$gagal_pesan;
-
+    
             $message = array(false, 'Proses Terkirim Sebagian', $rest, '#content_table');
-
+    
         } else if ($berhasil>0) {
             $rest = '- Sukses '.$statusKirim.' : '.$berhasil.' ';
-
+    
             $message = array(true, 'Proses Terkirim', $rest, '#content_table');
             
         } else if ($gagal>0) {
@@ -893,18 +1016,12 @@ class penerimaan extends MX_Controller{
                     - Pesan Gagal :
                     <br> 
                     '.$gagal_pesan;
-
+    
             $message = array(false, 'Proses Gagal', $rest, '');
         }
-
-        // if ($simpan[0]->RCDB == "RC00") {
-        //     $message = array(true, 'Proses Berhasil', $simpan[0]->PESANDB, '#content_table');
-        // } else {
-        //     $message = array(false, 'Proses Gagal', $simpan[0]->PESANDB, '');
-        // }
-        
+    
         echo json_encode($message, true);
-    }
+    } 
 
     public function saveKirimanClossing($statusKirim){
         $pilihan = $this->input->post('pilihan');
